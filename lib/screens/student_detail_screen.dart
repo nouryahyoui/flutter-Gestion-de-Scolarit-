@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/etudiant.dart';
 import '../theme/app_colors.dart';
 import 'add_student_screen.dart';
+import 'absence_screen.dart';
 
 class StudentDetailScreen extends StatefulWidget {
   final Etudiant etudiant;
@@ -41,7 +42,6 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final color  = AppColors.groupColor(_etudiant.groupe);
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.bgDark : AppColors.bg,
@@ -64,9 +64,9 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const SizedBox(height: 40),
-                      // Photo
                       Container(
-                        width: 100, height: 100,
+                        width: 100,
+                        height: 100,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 3),
@@ -90,11 +90,13 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      Text(_etudiant.nomComplet,
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold)),
+                      Text(
+                        _etudiant.nomComplet,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold),
+                      ),
                       const SizedBox(height: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -105,6 +107,36 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                         ),
                         child: Text(_etudiant.groupe,
                             style: const TextStyle(color: Colors.white)),
+                      ),
+                      const SizedBox(height: 10),
+                      // Badge absences
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _etudiant.absences.isEmpty
+                              ? Colors.green.withOpacity(0.3)
+                              : Colors.redAccent.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _etudiant.absences.isEmpty
+                                  ? Icons.check_circle_outline
+                                  : Icons.warning_amber_outlined,
+                              color: Colors.white,
+                              size: 14,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '${_etudiant.absences.length} absence(s)',
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 12),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -122,8 +154,7 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                   final updated = await Navigator.push<Etudiant>(
                     context,
                     MaterialPageRoute(
-                      builder: (_) =>
-                          AddStudentScreen(etudiant: _etudiant),
+                      builder: (_) => AddStudentScreen(etudiant: _etudiant),
                     ),
                   );
                   if (updated != null) {
@@ -166,15 +197,19 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                 children: [
                   _infoCard(Icons.badge_outlined, 'Nom', _etudiant.nom, isDark),
                   _infoCard(Icons.person_outline, 'Prénom', _etudiant.prenom, isDark),
-                  _infoCard(Icons.cake_outlined, 'Date de naissance',
-                      DateFormat('dd/MM/yyyy').format(_etudiant.dateNaiss), isDark),
+                  _infoCard(
+                      Icons.cake_outlined,
+                      'Date de naissance',
+                      DateFormat('dd/MM/yyyy').format(_etudiant.dateNaiss),
+                      isDark),
                   _infoCard(Icons.today_outlined, 'Âge',
                       '${_etudiant.age} ans', isDark),
-                  _infoCard(Icons.group_outlined, 'Groupe', _etudiant.groupe, isDark),
+                  _infoCard(
+                      Icons.group_outlined, 'Groupe', _etudiant.groupe, isDark),
                   _infoCard(Icons.phone_outlined, 'Téléphone', _etudiant.tel, isDark),
                   const SizedBox(height: 24),
 
-                  // Bouton Appeler
+                  // ✅ زر Appeler
                   Container(
                     width: double.infinity,
                     height: 52,
@@ -194,11 +229,108 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                     child: ElevatedButton.icon(
                       onPressed: _call,
                       icon: const Icon(Icons.phone, color: Colors.white),
-                      label: Text('Appeler ${_etudiant.prenom}',
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold)),
+                      label: Text(
+                        'Appeler ${_etudiant.prenom}',
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // ✅ زر Absences (جديد)
+                  Container(
+                    width: double.infinity,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFF6B35), Color(0xFFFF8E53)],
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.orange.withOpacity(0.4),
+                          blurRadius: 12,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                AbsenceScreen(etudiant: _etudiant),
+                          ),
+                        );
+                        setState(() {});
+                      },
+                      icon: const Icon(Icons.event_note, color: Colors.white),
+                      label: Text(
+                        'Absences (${_etudiant.absences.length})',
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // ✅ زر تعديل
+                  Container(
+                    width: double.infinity,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      gradient: AppColors.mainGradient,
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withOpacity(0.4),
+                          blurRadius: 12,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        final updated = await Navigator.push<Etudiant>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                AddStudentScreen(etudiant: _etudiant),
+                          ),
+                        );
+                        if (updated != null) {
+                          setState(() => _etudiant = updated);
+                          widget.onUpdate(updated);
+                        }
+                      },
+                      icon: const Icon(Icons.edit, color: Colors.white),
+                      label: const Text(
+                        'Modifier les infos',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.transparent,
                         shadowColor: Colors.transparent,

@@ -6,6 +6,7 @@ class Etudiant {
   String tel;
   String groupe;
   String? photoPath;
+  List<DateTime> absences;
 
   Etudiant({
     required this.id,
@@ -15,7 +16,8 @@ class Etudiant {
     required this.tel,
     required this.groupe,
     this.photoPath,
-  });
+    List<DateTime>? absences,
+  }) : absences = absences ?? [];
 
   String get nomComplet => '$prenom $nom';
 
@@ -23,29 +25,23 @@ class Etudiant {
     final now = DateTime.now();
     int age = now.year - dateNaiss.year;
     if (now.month < dateNaiss.month ||
-        (now.month == dateNaiss.month && now.day < dateNaiss.day)) {
-      age--;
-    }
+        (now.month == dateNaiss.month && now.day < dateNaiss.day)) age--;
     return age;
   }
 
-  Map<String, dynamic> toMap() => {
-    'id': id,
-    'nom': nom,
-    'prenom': prenom,
-    'dateNaiss': dateNaiss.toIso8601String(),
-    'tel': tel,
-    'groupe': groupe,
-    'photoPath': photoPath,
-  };
+  bool isAbsentToday() {
+    final now = DateTime.now();
+    return absences.any((d) =>
+        d.year == now.year && d.month == now.month && d.day == now.day);
+  }
 
-  factory Etudiant.fromMap(Map<String, dynamic> map) => Etudiant(
-    id: map['id'],
-    nom: map['nom'],
-    prenom: map['prenom'],
-    dateNaiss: DateTime.parse(map['dateNaiss']),
-    tel: map['tel'],
-    groupe: map['groupe'],
-    photoPath: map['photoPath'],
-  );
-}                          
+  void toggleAbsenceToday() {
+    final now = DateTime.now();
+    if (isAbsentToday()) {
+      absences.removeWhere((d) =>
+          d.year == now.year && d.month == now.month && d.day == now.day);
+    } else {
+      absences.add(now);
+    }
+  }
+}
