@@ -1,147 +1,207 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/etudiant.dart';
+import '../theme/app_colors.dart';
+import 'add_student_screen.dart';
 
-class StudentDetailScreen extends StatelessWidget {
+class StudentDetailScreen extends StatefulWidget {
   final Etudiant etudiant;
   final Function(String) onDelete;
+  final Function(Etudiant) onUpdate;
 
   const StudentDetailScreen({
     super.key,
     required this.etudiant,
     required this.onDelete,
+    required this.onUpdate,
   });
 
-  Future<void> _callStudent(BuildContext context) async {
-    final uri = Uri(scheme: 'tel', path: etudiant.tel);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Impossible d\'effectuer l\'appel')),
-      );
-    }
+  @override
+  State<StudentDetailScreen> createState() => _StudentDetailScreenState();
+}
+
+class _StudentDetailScreenState extends State<StudentDetailScreen> {
+  late Etudiant _etudiant;
+
+  @override
+  void initState() {
+    super.initState();
+    _etudiant = widget.etudiant;
   }
 
-  Color _groupColor(String groupe) {
-    switch (groupe) {
-      case 'G1': return const Color(0xFF1565C0);
-      case 'G2': return const Color(0xFF00897B);
-      case 'G3': return const Color(0xFF6A1B9A);
-      default:   return const Color(0xFFE65100);
+  Future<void> _call() async {
+    final uri = Uri(scheme: 'tel', path: _etudiant.tel);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color  = AppColors.groupColor(_etudiant.groupe);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F4FF),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF1565C0),
-        title: const Text('Fiche Étudiant',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (_) => AlertDialog(
-                  title: const Text('Supprimer'),
-                  content: Text('Supprimer ${etudiant.nomComplet} ?'),
-                  actions: [
-                    TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Annuler')),
-                    TextButton(
-                      onPressed: () {
-                        onDelete(etudiant.id);
-                        Navigator.pop(context);
-                        Navigator.pop(context, true);
-                      },
-                      child: const Text('Supprimer',
-                          style: TextStyle(color: Colors.red)),
-                    ),
-                  ],
+      backgroundColor: isDark ? AppColors.bgDark : AppColors.bg,
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 260,
+            pinned: true,
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: const BoxDecoration(
+                  gradient: AppColors.mainGradient,
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(30),
+                    bottomRight: Radius.circular(30),
+                  ),
                 ),
-              );
-            },
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(30),
-              decoration: const BoxDecoration(
-                color: Color(0xFF1565C0),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
-                ),
-              ),
-              child: Column(
-                children: [
-                  CircleAvatar(
-                    radius: 45,
-                    backgroundColor: Colors.white24,
-                    child: Text(
-                      etudiant.prenom[0] + etudiant.nom[0],
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
+                child: SafeArea(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 40),
+                      // Photo
+                      Container(
+                        width: 100, height: 100,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 3),
+                          color: Colors.white24,
+                        ),
+                        child: ClipOval(
+                          child: _etudiant.photoPath != null &&
+                                  File(_etudiant.photoPath!).existsSync()
+                              ? Image.file(File(_etudiant.photoPath!),
+                                  fit: BoxFit.cover)
+                              : Center(
+                                  child: Text(
+                                    _etudiant.prenom[0] + _etudiant.nom[0],
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 36,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 12),
+                      Text(_etudiant.nomComplet,
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white24,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(_etudiant.groupe,
+                            style: const TextStyle(color: Colors.white)),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                  Text(etudiant.nomComplet,
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white24,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(etudiant.groupe,
-                        style: const TextStyle(color: Colors.white)),
-                  ),
-                ],
+                ),
               ),
             ),
-            Padding(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.edit, color: Colors.white),
+                onPressed: () async {
+                  final updated = await Navigator.push<Etudiant>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          AddStudentScreen(etudiant: _etudiant),
+                    ),
+                  );
+                  if (updated != null) {
+                    setState(() => _etudiant = updated);
+                    widget.onUpdate(updated);
+                  }
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                onPressed: () => showDialog(
+                  context: context,
+                  builder: (_) => AlertDialog(
+                    title: const Text('Supprimer'),
+                    content: Text('Supprimer ${_etudiant.nomComplet} ?'),
+                    actions: [
+                      TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Annuler')),
+                      TextButton(
+                        onPressed: () {
+                          widget.onDelete(_etudiant.id);
+                          Navigator.pop(context);
+                          Navigator.pop(context, true);
+                        },
+                        child: const Text('Supprimer',
+                            style: TextStyle(color: Colors.red)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          SliverToBoxAdapter(
+            child: Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  _infoCard(Icons.badge_outlined, 'Nom', etudiant.nom),
-                  _infoCard(Icons.person_outline, 'Prénom', etudiant.prenom),
+                  _infoCard(Icons.badge_outlined, 'Nom', _etudiant.nom, isDark),
+                  _infoCard(Icons.person_outline, 'Prénom', _etudiant.prenom, isDark),
                   _infoCard(Icons.cake_outlined, 'Date de naissance',
-                      DateFormat('dd/MM/yyyy').format(etudiant.dateNaiss)),
-                  _infoCard(Icons.today_outlined, 'Âge', '${etudiant.age} ans'),
-                  _infoCard(Icons.group_outlined, 'Groupe', etudiant.groupe),
-                  _infoCard(Icons.phone_outlined, 'Téléphone', etudiant.tel),
-                  const SizedBox(height: 20),
-                  SizedBox(
+                      DateFormat('dd/MM/yyyy').format(_etudiant.dateNaiss), isDark),
+                  _infoCard(Icons.today_outlined, 'Âge',
+                      '${_etudiant.age} ans', isDark),
+                  _infoCard(Icons.group_outlined, 'Groupe', _etudiant.groupe, isDark),
+                  _infoCard(Icons.phone_outlined, 'Téléphone', _etudiant.tel, isDark),
+                  const SizedBox(height: 24),
+
+                  // Bouton Appeler
+                  Container(
                     width: double.infinity,
                     height: 52,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF00C853), Color(0xFF69F0AE)],
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.green.withOpacity(0.4),
+                          blurRadius: 12,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
                     child: ElevatedButton.icon(
-                      onPressed: () => _callStudent(context),
+                      onPressed: _call,
                       icon: const Icon(Icons.phone, color: Colors.white),
-                      label: Text('Appeler ${etudiant.prenom}',
+                      label: Text('Appeler ${_etudiant.prenom}',
                           style: const TextStyle(
                               color: Colors.white,
                               fontSize: 16,
                               fontWeight: FontWeight.bold)),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14)),
                       ),
@@ -150,30 +210,37 @@ class StudentDetailScreen extends StatelessWidget {
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _infoCard(IconData icon, String label, String value) {
+  Widget _infoCard(IconData icon, String label, String value, bool isDark) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: isDark ? AppColors.cardDark : Colors.white,
+        borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Row(
         children: [
-          Icon(icon, color: const Color(0xFF1565C0), size: 22),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              gradient: AppColors.mainGradient,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: Colors.white, size: 18),
+          ),
           const SizedBox(width: 14),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,

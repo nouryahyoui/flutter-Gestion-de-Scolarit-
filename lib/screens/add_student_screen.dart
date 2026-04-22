@@ -1,31 +1,117 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/etudiant.dart';
+import '../theme/app_colors.dart';
 
 class AddStudentScreen extends StatefulWidget {
-  const AddStudentScreen({super.key});
+  final Etudiant? etudiant; // pour l'édition
+  const AddStudentScreen({super.key, this.etudiant});
 
   @override
   State<AddStudentScreen> createState() => _AddStudentScreenState();
 }
 
 class _AddStudentScreenState extends State<AddStudentScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _nomCtrl = TextEditingController();
+  final _formKey  = GlobalKey<FormState>();
+  final _nomCtrl  = TextEditingController();
   final _prenomCtrl = TextEditingController();
-  final _telCtrl = TextEditingController();
+  final _telCtrl  = TextEditingController();
   DateTime? _dateNaiss;
-  String _groupe = 'G1';
+  String _groupe  = 'G1';
+  String? _photoPath;
+  final _picker   = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.etudiant != null) {
+      final e = widget.etudiant!;
+      _nomCtrl.text    = e.nom;
+      _prenomCtrl.text = e.prenom;
+      _telCtrl.text    = e.tel;
+      _dateNaiss       = e.dateNaiss;
+      _groupe          = e.groupe;
+      _photoPath       = e.photoPath;
+    }
+  }
+
+  Future<void> _pickImage() async {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text('Choisir une photo',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _photoOption(Icons.camera_alt, 'Caméra', () async {
+                  Navigator.pop(context);
+                  final img = await _picker.pickImage(
+                      source: ImageSource.camera, imageQuality: 80);
+                  if (img != null) setState(() => _photoPath = img.path);
+                }),
+                _photoOption(Icons.photo_library, 'Galerie', () async {
+                  Navigator.pop(context);
+                  final img = await _picker.pickImage(
+                      source: ImageSource.gallery, imageQuality: 80);
+                  if (img != null) setState(() => _photoPath = img.path);
+                }),
+              ],
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _photoOption(IconData icon, String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            width: 64, height: 64,
+            decoration: BoxDecoration(
+              gradient: AppColors.mainGradient,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(icon, color: Colors.white, size: 30),
+          ),
+          const SizedBox(height: 8),
+          Text(label),
+        ],
+      ),
+    );
+  }
 
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: DateTime(2002),
+      initialDate: _dateNaiss ?? DateTime(2002),
       firstDate: DateTime(1990),
       lastDate: DateTime.now(),
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(primary: Color(0xFF1565C0)),
+          colorScheme: const ColorScheme.light(primary: AppColors.primary),
         ),
         child: child!,
       ),
@@ -36,12 +122,14 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
   void _submit() {
     if (_formKey.currentState!.validate() && _dateNaiss != null) {
       final e = Etudiant(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        nom: _nomCtrl.text.trim(),
-        prenom: _prenomCtrl.text.trim(),
+        id: widget.etudiant?.id ??
+            DateTime.now().millisecondsSinceEpoch.toString(),
+        nom:       _nomCtrl.text.trim(),
+        prenom:    _prenomCtrl.text.trim(),
         dateNaiss: _dateNaiss!,
-        tel: _telCtrl.text.trim(),
-        groupe: _groupe,
+        tel:       _telCtrl.text.trim(),
+        groupe:    _groupe,
+        photoPath: _photoPath,
       );
       Navigator.pop(context, e);
     } else if (_dateNaiss == null) {
@@ -54,12 +142,15 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isEdit = widget.etudiant != null;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F4FF),
+      backgroundColor: isDark ? AppColors.bgDark : AppColors.bg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1565C0),
-        title: const Text('Ajouter un Étudiant',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        flexibleSpace: Container(decoration: const BoxDecoration(gradient: AppColors.mainGradient)),
+        title: Text(isEdit ? 'Modifier Étudiant' : 'Ajouter Étudiant',
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
@@ -68,19 +159,52 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
           key: _formKey,
           child: Column(
             children: [
+              // Photo picker
               Center(
-                child: Container(
-                  width: 90,
-                  height: 90,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1565C0).withOpacity(0.1),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFF1565C0), width: 2),
+                child: GestureDetector(
+                  onTap: _pickImage,
+                  child: Stack(
+                    children: [
+                      Container(
+                        width: 100, height: 100,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: _photoPath == null
+                              ? AppColors.mainGradient
+                              : null,
+                          border: Border.all(
+                              color: AppColors.primary, width: 3),
+                        ),
+                        child: ClipOval(
+                          child: _photoPath != null &&
+                                  File(_photoPath!).existsSync()
+                              ? Image.file(File(_photoPath!),
+                                  fit: BoxFit.cover)
+                              : const Icon(Icons.person,
+                                  size: 55, color: Colors.white),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 0, right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: const BoxDecoration(
+                            gradient: AppColors.mainGradient,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.camera_alt,
+                              size: 16, color: Colors.white),
+                        ),
+                      ),
+                    ],
                   ),
-                  child: const Icon(Icons.person, size: 50, color: Color(0xFF1565C0)),
                 ),
               ),
+              const SizedBox(height: 8),
+              const Text('Appuyer pour ajouter une photo',
+                  style: TextStyle(color: Colors.grey, fontSize: 12)),
               const SizedBox(height: 24),
+
               _buildField(_prenomCtrl, 'Prénom', Icons.person_outline),
               const SizedBox(height: 14),
               _buildField(_nomCtrl, 'Nom', Icons.badge_outlined),
@@ -88,19 +212,22 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
               _buildField(_telCtrl, 'Téléphone', Icons.phone_outlined,
                   keyboardType: TextInputType.phone),
               const SizedBox(height: 14),
+
+              // Date
               GestureDetector(
                 onTap: _pickDate,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: isDark ? AppColors.cardDark : Colors.white,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade200),
+                    border: Border.all(color: Colors.grey.shade300),
                   ),
                   child: Row(
                     children: [
                       const Icon(Icons.calendar_today_outlined,
-                          color: Color(0xFF1565C0), size: 20),
+                          color: AppColors.primary, size: 20),
                       const SizedBox(width: 12),
                       Text(
                         _dateNaiss == null
@@ -109,7 +236,7 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                         style: TextStyle(
                           color: _dateNaiss == null
                               ? Colors.grey[400]
-                              : Colors.black87,
+                              : null,
                           fontSize: 15,
                         ),
                       ),
@@ -118,27 +245,37 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                 ),
               ),
               const SizedBox(height: 14),
+
+              // Groupe
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: isDark ? AppColors.cardDark : Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade200),
+                  border: Border.all(color: Colors.grey.shade300),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     value: _groupe,
                     isExpanded: true,
+                    dropdownColor:
+                        isDark ? AppColors.cardDark : Colors.white,
                     icon: const Icon(Icons.keyboard_arrow_down,
-                        color: Color(0xFF1565C0)),
+                        color: AppColors.primary),
                     items: ['G1', 'G2', 'G3', 'G4']
                         .map((g) => DropdownMenuItem(
                               value: g,
                               child: Row(
                                 children: [
-                                  const Icon(Icons.group_outlined,
-                                      color: Color(0xFF1565C0), size: 20),
-                                  const SizedBox(width: 12),
+                                  Container(
+                                    width: 12, height: 12,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.groupColor(g),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
                                   Text('Groupe $g'),
                                 ],
                               ),
@@ -149,18 +286,32 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
                 ),
               ),
               const SizedBox(height: 30),
-              SizedBox(
+
+              // Bouton
+              Container(
                 width: double.infinity,
                 height: 52,
+                decoration: BoxDecoration(
+                  gradient: AppColors.mainGradient,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
                 child: ElevatedButton(
                   onPressed: _submit,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1565C0),
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),
                   ),
-                  child: const Text('Enregistrer',
-                      style: TextStyle(
+                  child: Text(isEdit ? 'Modifier' : 'Enregistrer',
+                      style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.bold)),
@@ -174,31 +325,27 @@ class _AddStudentScreenState extends State<AddStudentScreen> {
   }
 
   Widget _buildField(
-    TextEditingController ctrl,
-    String label,
-    IconData icon, {
-    TextInputType keyboardType = TextInputType.text,
-  }) {
+    TextEditingController ctrl, String label, IconData icon,
+    {TextInputType keyboardType = TextInputType.text}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return TextFormField(
       controller: ctrl,
       keyboardType: keyboardType,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, color: const Color(0xFF1565C0), size: 20),
+        prefixIcon: Icon(icon, color: AppColors.primary, size: 20),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: isDark ? AppColors.cardDark : Colors.white,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade200),
-        ),
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.shade300)),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF1565C0), width: 1.5),
-        ),
+            borderRadius: BorderRadius.circular(12),
+            borderSide:
+                const BorderSide(color: AppColors.primary, width: 1.5)),
       ),
       validator: (v) => v == null || v.isEmpty ? 'Champ requis' : null,
     );

@@ -5,7 +5,7 @@ class Etudiant {
   DateTime dateNaiss;
   String tel;
   String groupe;
-  String? photo;
+  String? photoPath;
 
   Etudiant({
     required this.id,
@@ -14,7 +14,7 @@ class Etudiant {
     required this.dateNaiss,
     required this.tel,
     required this.groupe,
-    this.photo,
+    this.photoPath,
   });
 
   String get nomComplet => '$prenom $nom';
@@ -28,4 +28,24 @@ class Etudiant {
     }
     return age;
   }
-}
+
+  Map<String, dynamic> toMap() => {
+    'id': id,
+    'nom': nom,
+    'prenom': prenom,
+    'dateNaiss': dateNaiss.toIso8601String(),
+    'tel': tel,
+    'groupe': groupe,
+    'photoPath': photoPath,
+  };
+
+  factory Etudiant.fromMap(Map<String, dynamic> map) => Etudiant(
+    id: map['id'],
+    nom: map['nom'],
+    prenom: map['prenom'],
+    dateNaiss: DateTime.parse(map['dateNaiss']),
+    tel: map['tel'],
+    groupe: map['groupe'],
+    photoPath: map['photoPath'],
+  );
+}                          
