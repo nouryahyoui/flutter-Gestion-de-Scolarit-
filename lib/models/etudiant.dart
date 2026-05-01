@@ -25,21 +25,27 @@ class Etudiant {
     final now = DateTime.now();
     int age = now.year - dateNaiss.year;
     if (now.month < dateNaiss.month ||
-        (now.month == dateNaiss.month && now.day < dateNaiss.day)) age--;
+        (now.month == dateNaiss.month && now.day < dateNaiss.day)) {
+      age--;
+    }
     return age;
   }
 
   bool isAbsentToday() {
     final now = DateTime.now();
     return absences.any((d) =>
-        d.year == now.year && d.month == now.month && d.day == now.day);
+        d.year == now.year &&
+        d.month == now.month &&
+        d.day == now.day);
   }
 
   void toggleAbsenceToday() {
     final now = DateTime.now();
     if (isAbsentToday()) {
       absences.removeWhere((d) =>
-          d.year == now.year && d.month == now.month && d.day == now.day);
+          d.year == now.year &&
+          d.month == now.month &&
+          d.day == now.day);
     } else {
       absences.add(now);
     }

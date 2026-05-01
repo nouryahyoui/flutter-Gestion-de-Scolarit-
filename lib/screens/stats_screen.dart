@@ -25,7 +25,6 @@ class _StatsScreenState extends State<StatsScreen>
   @override
   void initState() {
     super.initState();
-
     _headerCtrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 600));
     _kpiCtrl = AnimationController(
@@ -38,22 +37,18 @@ class _StatsScreenState extends State<StatsScreen>
     _kpiFade =
         CurvedAnimation(parent: _kpiCtrl, curve: Curves.easeOut);
     _kpiSlide = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _kpiCtrl, curve: Curves.easeOut));
+            begin: const Offset(0, 0.3), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _kpiCtrl, curve: Curves.easeOut));
     _chartsFade =
         CurvedAnimation(parent: _chartsCtrl, curve: Curves.easeOut);
     _chartsSlide = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(
-        CurvedAnimation(parent: _chartsCtrl, curve: Curves.easeOut));
+            begin: const Offset(0, 0.3), end: Offset.zero)
+        .animate(
+            CurvedAnimation(parent: _chartsCtrl, curve: Curves.easeOut));
 
-    _headerCtrl.forward().then((_) {
-      _kpiCtrl.forward().then((_) {
-        _chartsCtrl.forward();
-      });
-    });
+    _headerCtrl
+        .forward()
+        .then((_) => _kpiCtrl.forward().then((_) => _chartsCtrl.forward()));
   }
 
   @override
@@ -83,9 +78,13 @@ class _StatsScreenState extends State<StatsScreen>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final now = DateTime.now();
-    final jours = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
-    final mois = ['Janvier','Février','Mars','Avril','Mai','Juin',
-      'Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+    final jours = [
+      'Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'
+    ];
+    final mois = [
+      'Janvier','Février','Mars','Avril','Mai','Juin',
+      'Juillet','Août','Septembre','Octobre','Novembre','Décembre'
+    ];
     final dateStr =
         '${jours[now.weekday - 1]} ${now.day} ${mois[now.month - 1]} ${now.year}';
 
@@ -93,6 +92,7 @@ class _StatsScreenState extends State<StatsScreen>
       backgroundColor: isDark ? AppColors.bgDark : AppColors.bg,
       body: CustomScrollView(
         slivers: [
+
           // ── Header ──
           SliverToBoxAdapter(
             child: FadeTransition(
@@ -113,7 +113,6 @@ class _StatsScreenState extends State<StatsScreen>
                 ),
                 child: Stack(
                   children: [
-                    // دوائر ديكور
                     Positioned(
                       right: -30, top: -30,
                       child: Container(
@@ -143,10 +142,12 @@ class _StatsScreenState extends State<StatsScreen>
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold)),
                         const SizedBox(height: 4),
-                        Text('Vue d\'ensemble de votre établissement',
-                            style: TextStyle(
-                                color: Colors.white.withOpacity(0.75),
-                                fontSize: 13)),
+                        Text(
+                          'Vue d\'ensemble de votre établissement',
+                          style: TextStyle(
+                              color: Colors.white.withOpacity(0.75),
+                              fontSize: 13),
+                        ),
                         const SizedBox(height: 2),
                         Text(dateStr,
                             style: TextStyle(
@@ -168,30 +169,55 @@ class _StatsScreenState extends State<StatsScreen>
                 opacity: _kpiFade,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 1.6,
+                  child: Column(
                     children: [
-                      _kpiCard('Total étudiants', '$_total',
-                          Icons.people_rounded,
-                          const Color(0xFF7B2FF7), const Color(0xFF9B5FE7),
-                          '↑ actifs'),
-                      _kpiCard('Présents', '$_presentsAujourdhui',
-                          Icons.check_circle_rounded,
-                          const Color(0xFF00C853), const Color(0xFF1DE9B6),
-                          '${_total == 0 ? 0 : (_presentsAujourdhui * 100 / _total).round()}% taux'),
-                      _kpiCard('Absents', '$_absentsAujourdhui',
-                          Icons.cancel_rounded,
-                          const Color(0xFFFF6B35), const Color(0xFFFF8E53),
-                          '${_total == 0 ? 0 : (_absentsAujourdhui * 100 / _total).round()}% taux'),
-                      _kpiCard('Absences cumulées', '$_totalAbsences',
-                          Icons.event_busy_rounded,
-                          const Color(0xFF0077B6), const Color(0xFF00C9FF),
-                          'ce semestre'),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _kpiCard(
+                              'Total étudiants', '$_total',
+                              Icons.people_rounded,
+                              const Color(0xFF7B2FF7),
+                              const Color(0xFF9B5FE7),
+                              '↑ actifs',
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _kpiCard(
+                              'Présents', '$_presentsAujourdhui',
+                              Icons.check_circle_rounded,
+                              const Color(0xFF00C853),
+                              const Color(0xFF1DE9B6),
+                              '${_total == 0 ? 0 : (_presentsAujourdhui * 100 / _total).round()}% taux',
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _kpiCard(
+                              'Absents', '$_absentsAujourdhui',
+                              Icons.cancel_rounded,
+                              const Color(0xFFFF6B35),
+                              const Color(0xFFFF8E53),
+                              '${_total == 0 ? 0 : (_absentsAujourdhui * 100 / _total).round()}% taux',
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _kpiCard(
+                              'Absences cumulées', '$_totalAbsences',
+                              Icons.event_busy_rounded,
+                              const Color(0xFF0077B6),
+                              const Color(0xFF00C9FF),
+                              'ce semestre',
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -212,26 +238,16 @@ class _StatsScreenState extends State<StatsScreen>
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Bar Chart
                       Expanded(
                         flex: 3,
-                        child: _card(
-                          isDark,
-                          'Absences par groupe',
-                          'Nombre d\'absences',
-                          _barChart(),
-                        ),
+                        child: _card(isDark, 'Absences par groupe',
+                            'Nombre d\'absences', _barChart()),
                       ),
                       const SizedBox(width: 12),
-                      // Pie Chart
                       Expanded(
                         flex: 2,
-                        child: _card(
-                          isDark,
-                          'Groupes',
-                          'Répartition',
-                          _pieChart(isDark),
-                        ),
+                        child: _card(isDark, 'Groupes',
+                            'Répartition', _pieChart(isDark)),
                       ),
                     ],
                   ),
@@ -269,10 +285,11 @@ class _StatsScreenState extends State<StatsScreen>
     );
   }
 
-  // ── KPI Card ──
+  // ── KPI Card ── (أيقونة + نص جنب بعض)
   Widget _kpiCard(String label, String value, IconData icon,
       Color c1, Color c2, String trend) {
     return Container(
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [c1, c2],
@@ -288,40 +305,51 @@ class _StatsScreenState extends State<StatsScreen>
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Container(
-              width: 34, height: 34,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: Colors.white, size: 18),
+      child: Row(
+        children: [
+          // Icon
+          Container(
+            width: 48, height: 48,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(14),
             ),
-            Column(
+            child: Icon(icon, color: Colors.white, size: 26),
+          ),
+          const SizedBox(width: 14),
+          // Text
+          Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(value,
                     style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold)),
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        height: 1)),
+                const SizedBox(height: 3),
                 Text(label,
                     style: TextStyle(
-                        color: Colors.white.withOpacity(0.75),
-                        fontSize: 10)),
-                Text(trend,
-                    style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 10)),
+                        color: Colors.white.withOpacity(0.8),
+                        fontSize: 11),
+                    overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    Icon(Icons.trending_up,
+                        color: Colors.white.withOpacity(0.7), size: 11),
+                    const SizedBox(width: 3),
+                    Text(trend,
+                        style: TextStyle(
+                            color: Colors.white.withOpacity(0.7),
+                            fontSize: 10)),
+                  ],
+                ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -348,8 +376,7 @@ class _StatsScreenState extends State<StatsScreen>
               style: const TextStyle(
                   fontSize: 13, fontWeight: FontWeight.bold)),
           Text(sub,
-              style: TextStyle(
-                  color: Colors.grey[500], fontSize: 11)),
+              style: TextStyle(color: Colors.grey[500], fontSize: 11)),
           const SizedBox(height: 12),
           child,
         ],
@@ -366,7 +393,6 @@ class _StatsScreenState extends State<StatsScreen>
       const Color(0xFF00BCD4),
       const Color(0xFFFF6B35),
     ];
-
     return SizedBox(
       height: 160,
       child: BarChart(
@@ -379,7 +405,7 @@ class _StatsScreenState extends State<StatsScreen>
               x: i,
               barRods: [
                 BarChartRodData(
-                  toY: abs.toDouble() == 0 ? 0.3 : abs.toDouble(),
+                  toY: abs == 0 ? 0.3 : abs.toDouble(),
                   gradient: LinearGradient(
                     colors: [colors[i], colors[i].withOpacity(0.6)],
                     begin: Alignment.bottomCenter,
@@ -425,8 +451,7 @@ class _StatsScreenState extends State<StatsScreen>
                 reservedSize: 24,
                 getTitlesWidget: (v, _) => Text(
                   '${v.toInt()}',
-                  style: TextStyle(
-                      fontSize: 10, color: Colors.grey[500]),
+                  style: TextStyle(fontSize: 10, color: Colors.grey[500]),
                 ),
               ),
             ),
@@ -467,33 +492,36 @@ class _StatsScreenState extends State<StatsScreen>
       children: [
         SizedBox(
           height: 120,
-          child: PieChart(
-            PieChartData(
-              sections: sections,
-              centerSpaceRadius: 28,
-              sectionsSpace: 2,
-            ),
-          ),
+          child: PieChart(PieChartData(
+            sections: sections,
+            centerSpaceRadius: 28,
+            sectionsSpace: 2,
+          )),
         ),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
           runSpacing: 4,
           alignment: WrapAlignment.center,
-          children: List.generate(groupes.length, (i) => Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 8, height: 8,
-                decoration: BoxDecoration(
-                    color: colors[i], shape: BoxShape.circle),
-              ),
-              const SizedBox(width: 3),
-              Text('${groupes[i]}(${_countGroupe(groupes[i])})',
-                  style: TextStyle(
-                      fontSize: 10, color: Colors.grey[600])),
-            ],
-          )),
+          children: List.generate(
+            groupes.length,
+            (i) => Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 8, height: 8,
+                  decoration: BoxDecoration(
+                      color: colors[i], shape: BoxShape.circle),
+                ),
+                const SizedBox(width: 3),
+                Text(
+                  '${groupes[i]}(${_countGroupe(groupes[i])})',
+                  style:
+                      TextStyle(fontSize: 10, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
         ),
       ],
     );
@@ -530,14 +558,18 @@ class _StatsScreenState extends State<StatsScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text('Classement absences',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+              style:
+                  TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
           Text('Top étudiants',
               style: TextStyle(color: Colors.grey[500], fontSize: 11)),
           const SizedBox(height: 12),
           if (top.isEmpty)
             Center(
-              child: Text('Aucun étudiant',
-                  style: TextStyle(color: Colors.grey[400])),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text('Aucun étudiant',
+                    style: TextStyle(color: Colors.grey[400])),
+              ),
             )
           else
             ...List.generate(top.length, (i) {
@@ -595,7 +627,7 @@ class _StatsScreenState extends State<StatsScreen>
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        '${e.absences.length}',
+                        '${e.absences.length} abs',
                         style: TextStyle(
                             color: e.absences.isEmpty
                                 ? Colors.green
@@ -640,7 +672,8 @@ class _StatsScreenState extends State<StatsScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text('Statistiques détaillées',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+              style:
+                  TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
           Text('Indicateurs clés',
               style: TextStyle(color: Colors.grey[500], fontSize: 11)),
           const SizedBox(height: 12),
@@ -672,7 +705,8 @@ class _StatsScreenState extends State<StatsScreen>
                     borderRadius: BorderRadius.circular(4),
                     child: TweenAnimationBuilder<double>(
                       tween: Tween(begin: 0, end: pct),
-                      duration: Duration(milliseconds: 800 + i * 150),
+                      duration:
+                          Duration(milliseconds: 800 + i * 150),
                       curve: Curves.easeOut,
                       builder: (_, val, __) => LinearProgressIndicator(
                         value: val,
@@ -694,17 +728,19 @@ class _StatsScreenState extends State<StatsScreen>
               '${_moyenneAge.toStringAsFixed(1)} ans',
               AppColors.primary),
           _statRow(
-              'Plus âgé',
-              _total == 0
-                  ? '-'
-                  : '${widget.etudiants.map((e) => e.age).reduce((a, b) => a > b ? a : b)} ans',
-              Colors.green),
+            'Plus âgé',
+            _total == 0
+                ? '-'
+                : '${widget.etudiants.map((e) => e.age).reduce((a, b) => a > b ? a : b)} ans',
+            Colors.green,
+          ),
           _statRow(
-              'Plus jeune',
-              _total == 0
-                  ? '-'
-                  : '${widget.etudiants.map((e) => e.age).reduce((a, b) => a < b ? a : b)} ans',
-              Colors.teal),
+            'Plus jeune',
+            _total == 0
+                ? '-'
+                : '${widget.etudiants.map((e) => e.age).reduce((a, b) => a < b ? a : b)} ans',
+            Colors.teal,
+          ),
         ],
       ),
     );
@@ -716,8 +752,7 @@ class _StatsScreenState extends State<StatsScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label,
-              style: const TextStyle(fontSize: 11)),
+          Text(label, style: const TextStyle(fontSize: 11)),
           Container(
             padding:
                 const EdgeInsets.symmetric(horizontal: 10, vertical: 3),

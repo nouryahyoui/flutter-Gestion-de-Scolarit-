@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/etudiant.dart';
+import '../database/db_helper.dart';
 import '../theme/app_colors.dart';
 import 'home_screen.dart';
 import 'stats_screen.dart';
@@ -13,40 +14,80 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
+  List<Etudiant> _etudiants = [];
+  bool _loading = true;
 
-  final List<Etudiant> _etudiants = [
-    Etudiant(
-      id: '1', nom: 'Ben Ali', prenom: 'Ahmed',
-      dateNaiss: DateTime(2001, 5, 12),
-      tel: '+21698765432', groupe: 'G1',
-    ),
-    Etudiant(
-      id: '2', nom: 'Trabelsi', prenom: 'Sarra',
-      dateNaiss: DateTime(2002, 3, 20),
-      tel: '+21692345678', groupe: 'G2',
-    ),
-    Etudiant(
-      id: '3', nom: 'Mansour', prenom: 'Karim',
-      dateNaiss: DateTime(2000, 11, 8),
-      tel: '+21655123456', groupe: 'G1',
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadEtudiants();
+  }
+
+  Future<void> _loadEtudiants() async {
+    final data = await DbHelper.instance.getAllEtudiants();
+    setState(() {
+      _etudiants = data;
+      _loading = false;
+    });
+  }
+
+  Future<void> _addEtudiant(Etudiant e) async {
+    await DbHelper.instance.insertEtudiant(e);
+    setState(() => _etudiants.add(e));
+  }
+
+  Future<void> _deleteEtudiant(String id) async {
+    await DbHelper.instance.deleteEtudiant(id);
+    setState(() => _etudiants.removeWhere((e) => e.id == id));
+  }
+
+  Future<void> _updateEtudiant(Etudiant updated) async {
+    await DbHelper.instance.updateEtudiant(updated);
+    setState(() {
+      final i = _etudiants.indexWhere((e) => e.id == updated.id);
+      if (i != -1) _etudiants[i] = updated;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    if (_loading) {
+      return Scaffold(
+        backgroundColor: isDark ? AppColors.bgDark : AppColors.bg,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: AppColors.mainGradient,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.school_rounded,
+                    color: Colors.white, size: 40),
+              ),
+              const SizedBox(height: 20),
+              const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+              ),
+              const SizedBox(height: 12),
+              Text('Chargement...',
+                  style: TextStyle(color: Colors.grey[500])),
+            ],
+          ),
+        ),
+      );
+    }
+
     final screens = [
       HomeScreen(
         etudiants: _etudiants,
-        onAdd: (e) => setState(() => _etudiants.add(e)),
-        onDelete: (id) => setState(() => _etudiants.removeWhere((e) => e.id == id)),
-        onUpdate: (updated) {
-          setState(() {
-            final i = _etudiants.indexWhere((e) => e.id == updated.id);
-            if (i != -1) _etudiants[i] = updated;
-          });
-        },
+        onAdd: _addEtudiant,
+        onDelete: _deleteEtudiant,
+        onUpdate: _updateEtudiant,
       ),
       StatsScreen(etudiants: _etudiants),
     ];
@@ -88,7 +129,8 @@ class _MainScreenState extends State<MainScreen> {
             elevation: 0,
             selectedItemColor: AppColors.primary,
             unselectedItemColor: Colors.grey,
-            selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
+            selectedLabelStyle:
+                const TextStyle(fontWeight: FontWeight.bold),
             items: const [
               BottomNavigationBarItem(
                 icon: Icon(Icons.people_outline),
